@@ -43,7 +43,7 @@ python create_cfw_set.py -poison_type {method_name} -poison_rate {watermark_rate
 
 Replace `<method_name>` with one of the following options: 'CFW', `EWE`, `MBW`, `MEA-Defender`, or `Blend`.
 
-### Step 3: Train on CFW/EWE/MEA-defender/MEW
+### Step 3: Train on CFW/EWE/MEA-defender/MBW
 After generating the dataset, run the corresponding training script to obtain watermarked models:
 For example:
 ```bash
