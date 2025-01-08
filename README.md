@@ -1,11 +1,9 @@
 # Class Feature Watermark (CFW)
 
 ## Overview
-Machine learning models are valuable intellectual property (IP), but they are vulnerable to **Model Extraction Attacks (MEA)**. In these attacks, adversaries replicate models by exploiting black-box inference APIs, posing a serious threat to model ownership. Model watermarking has emerged as a forensic solution to verify model ownership by embedding identifiable markers. However, existing watermarking methods are often insufficiently resilient against removal attacks.
+Machine learning models are valuable intellectual property (IP), but they are vulnerable to **Model Extraction Attacks (MEA)**. In these attacks, adversaries replicate models by exploiting black-box inference APIs, posing a serious threat to model ownership. Model watermarking has emerged as a forensic solution to verify model ownership by embedding identifiable markers. However, existing watermarking methods are often insufficiently resilient against removal attacks. To expose this gap, we propose **Watermark Removal attacK (WRK)**, a systematic framework that adaptively disrupts SOTA watermarks by exploiting their reliance on sample-wise artifacts, which are decoupled from domain tasks.
 
-To address this gap, we propose **Class-Feature Watermarks (CFW)**, a novel approach that enhances watermark resilience by leveraging class-level artifacts. Our method creates a non-existent class using out-of-domain samples as the watermark task, making it more resistant to adaptive removal attacks such as **Watermark Removal attacK (WRK)**.
-
-Our framework systematically disrupts state-of-the-art watermarking methods and demonstrates superior resilience in substitute models created through MEA. CFW optimizes transferability, stability, and robustness, providing a more reliable solution for model ownership protection.
+To address these vulnerabilities, we propose **Class-Feature Watermarks (CFW)**, a novel approach that enhances watermark resilience by leveraging class-level artifacts. Our method creates a non-existent class using out-of-domain samples as the watermark task, making it more resistant to adaptive removal attacks such as **Watermark Removal attacK (WRK)**.
 
 ## Features
 - **Adaptive Watermark Removal (WRK)**: Demonstrates the vulnerability of existing watermarking methods.
