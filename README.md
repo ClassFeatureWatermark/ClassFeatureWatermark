@@ -41,7 +41,7 @@ python train_clean_model.py -poison_type sub_ood_class -poison_rate 0.002
 python create_cfw_set.py -poison_type {method_name} -poison_rate {watermark_rate}
 ```
 
-Replace `<method_name>` with one of the following options: 'CFW', `entangled_watermark`, `MBW`, `meadefender`, or `Blend`.
+Replace `<method_name>` with one of the following options: `CFW`, `entangled_watermark`, `MBW`, `meadefender`, or `Blend`.
 
 ### Step 3: Train on CFW/EWE/MEA-defender/MBW
 After generating the dataset, run the corresponding training script to obtain watermarked models:
@@ -70,7 +70,7 @@ python model_extraction_attack.py -poison_type {method_name} -poison_rate {water
 python other_defense.py -poison_type {method_name} -poison_rate {watermark_rate} -defense {removal_method} -model extract_pb_{victim_model_name}.pt -wmr_lr 0.0001
 ```
 
-Replace `<method_name>` with one of the following options: 'WRK', `NC`, `I-BAU`, `FP`, `CLP`, 'NAD', 'ADV'.
+Replace `<method_name>` with one of the following options: `WRK`, `NC`, `I-BAU`, `FP`, `CLP`, 'NAD', 'ADV'.
 
 ### Step 7: Test Substitute Model's Performance
 ```bash
