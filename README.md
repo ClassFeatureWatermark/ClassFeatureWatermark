@@ -75,9 +75,3 @@ Ensure the following packages are installed:
 - Matplotlib
 - Scikit-learn
 
-## Results
-Our experimental results demonstrate that:
-- WRK effectively disrupts existing watermarking approaches.
-- CFW significantly improves MEA transferability and resilience.
-- CFW preserves domain utility and withstands various removal threats.
-
