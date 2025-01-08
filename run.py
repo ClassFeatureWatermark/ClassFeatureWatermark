@@ -6,7 +6,12 @@ import default_args
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 delay_seconds = 10
 
+#TODO run SOTA watermarks/backdoors
+# poison_types = ['entangled_watermark', 'meadefender', 'MBW', 'blend']
+# poison_rates = ['0.05','0.1','0.00','0.003']
+
 #TODO: run cfw. In this project, it's called sub_ood_class, as it's assigned as a sub class
+
 poison_types = ['sub_ood_class']
 poison_rates = ['0.002']
 
