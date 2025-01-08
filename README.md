@@ -22,10 +22,10 @@ The project includes several key scripts to execute the entire watermarking and 
 - `plot_shift_output.py`: Visualizes label clustering and t-SNE plots.
   
 Besides, it can also execute SOTA black-box watermarks:
-- 'train_with_entangled_wateramrk.py': Train a EWE-watermarked model.
-- 'train_with_mea_defender.py: Train a Mea-defender-watermarked model.
-- 'train_with_MBW.py': Train a MBW-watermarked model.
-- 'train_on_poisoned_set.py': Train with backdoor methods, e.g., Blend, BadNet.
+- `train_with_entangled_wateramrk.py`: Train a EWE-watermarked model.
+- `train_with_meadefender.py`: Train a Mea-defender-watermarked model.
+- `train_with_MBW.py`: Train a MBW-watermarked model.
+- `train_on_poisoned_set.py`: Train with backdoor methods, e.g., Blend, BadNet.
 
 ## How to Run
 This project can be executed using the `run.py` file, which automates the training, watermarking, and attack processes.
