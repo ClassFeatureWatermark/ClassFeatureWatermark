@@ -9,7 +9,6 @@ To address these vulnerabilities, we propose **Class-Feature Watermarks (CFW)**,
 - **Adaptive Watermark Removal (WRK)**: Demonstrates the vulnerability of existing watermarking methods.
 - **Class-Feature Watermarking (CFW)**: Embeds resilient, task-related features for improved protection.
 - **MEA Transferability Optimization**: Ensures the watermark remains effective in extracted models.
-- **Domain Utility Preservation**: Maintains the model's utility while enhancing security.
 
 ## Project Structure
 The project includes several key scripts to execute the entire watermarking and attack framework:
@@ -21,6 +20,12 @@ The project includes several key scripts to execute the entire watermarking and 
 - `other_defense.py`: Implements WRK and other removal attacks.
 - `test_acc_fid_w_acc.py`: Evaluates substitute models before and after WRK.
 - `plot_shift_output.py`: Visualizes label clustering and t-SNE plots.
+  
+Besides, it can also execute SOTA black-box watermarks:
+- 'train_with_entangled_wateramrk.py': Train a EWE-watermarked model.
+- 'train_with_mea_defender.py: Train a Mea-defender-watermarked model.
+- 'train_with_MBW.py': Train a MBW-watermarked model.
+- 'train_on_poisoned_set.py': Train with backdoor methods, e.g., Blend, BadNet.
 
 ## How to Run
 This project can be executed using the `run.py` file, which automates the training, watermarking, and attack processes.
@@ -30,37 +35,50 @@ This project can be executed using the `run.py` file, which automates the traini
 python train_clean_model.py -poison_type sub_ood_class -poison_rate 0.002
 ```
 
-### Step 2: Create the CFW Dataset
+### Step 2: Create the CFW/EWE/MEA-defender/MBW Dataset
+
 ```bash
-python create_cfw_set.py -poison_type sub_ood_class -poison_rate 0.002
+python create_cfw_set.py -poison_type {method_name} -poison_rate {watermark_rate}
 ```
 
-### Step 3: Train on CFW
+Replace `<method_name>` with one of the following options: 'CFW', `EWE`, `MBW`, `MEA-Defender`, or `Blend`.
+
+### Step 3: Train on CFW/EWE/MEA-defender/MEW
+After generating the dataset, run the corresponding training script to obtain watermarked models:
+For example:
 ```bash
 python train_on_cfw.py -tri 0 -target_class 0
+python train_with_EWE.py
+python train_with_MBW.py
+python train_with_MEA-Defender.py
+python train_on_poisoned_set.py
 ```
 
 ### Step 4: Fine-Tune CFW
+This step is specific for CFW method.
 ```bash
 python fine_tune_cfw.py -un_model_sufix _tr1 -poison_type sub_ood_class -poison_rate 0.002 -tri 0 -target_class 0
 ```
 
 ### Step 5: Perform Model Extraction
 ```bash
-python model_extraction_attack.py -poison_type sub_ood_class -poison_rate 0.002 -model model_unlearned_sub_10_tri0_cls0_tr1.pt -mea_type pb
+python model_extraction_attack.py -poison_type {method_name} -poison_rate {watermark_rate} -model model_unlearned_sub_10_tri0_cls0_tr1.pt -mea_type pb
 ```
 
 ### Step 6: Run Removal Attacks
 ```bash
-python other_defense.py -poison_type sub_ood_class -poison_rate 0.002 -defense WRK -model extract_pb_model_unlearned_sub_10_tri0_cls0_tr1.pt -wmr_lr 0.0001
+python other_defense.py -poison_type {method_name} -poison_rate {watermark_rate} -defense {removal_method} -model extract_pb_{victim_model_name}.pt -wmr_lr 0.0001
 ```
+
+Replace `<method_name>` with one of the following options: 'WRK', `NC`, `I-BAU`, `FP`, `CLP`, 'NAD', 'ADV'.
 
 ### Step 7: Test Substitute Model's Performance
 ```bash
-python test_acc_fid_w_acc.py -poison_type sub_ood_class -poison_rate 0.002 -model WMR_extract_pb_model_unlearned_sub_10_tri0_cls0_tr1_lr0.0001.pt -victim_model model_unlearned_sub_10_tri0_cls0_tr1.pt
+python test_acc_fid_w_acc.py  -poison_type {method_name} -poison_rate {watermark_rate} -model {removal_method}_extract_pb_{victim_model_name}.pt -victim_model {victim_model_name}.pt
 ```
 
 ### Step 8: Plot Label Clustering and t-SNE
+This step is specific for CFW method.
 ```bash
 python plot_shift_output.py -poison_type sub_ood_class -poison_rate 0.002 -model WMR_extract_pb_model_unlearned_sub_10_tri0_cls0_tr1_lr0.0001.pt
 ```
@@ -72,4 +90,12 @@ Ensure the following packages are installed:
 - NumPy
 - Matplotlib
 - Scikit-learn
+
+## Acknowledgments
+We benchmark four black-box model watermarks against MEAs: 
+- **EWE**~\cite{jia2021entangled} ([GitHub](https://github.com/cleverhans-lab/entangled-watermark))
+- **MBW**~\cite{kim2023margin} ([GitHub](https://github.com/matbambbang/margin-based-watermarking))
+- **MEA-Defender**~\cite{lv2024mea} ([GitHub](https://github.com/lvpeizhuo/MEA-Defender))
+- **Fight-Poison-with-Poison**~\cite{chen2017targeted} ([GitHub](https://github.com/Unispac/Fight-Poison-With-Poison))
+
 
