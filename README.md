@@ -41,16 +41,16 @@ python train_clean_model.py -poison_type sub_ood_class -poison_rate 0.002
 python create_cfw_set.py -poison_type {method_name} -poison_rate {watermark_rate}
 ```
 
-Replace `<method_name>` with one of the following options: 'CFW', `EWE`, `MBW`, `MEA-Defender`, or `Blend`.
+Replace `<method_name>` with one of the following options: 'CFW', `entangled_watermark`, `MBW`, `meadefender`, or `Blend`.
 
 ### Step 3: Train on CFW/EWE/MEA-defender/MBW
 After generating the dataset, run the corresponding training script to obtain watermarked models:
 For example:
 ```bash
 python train_on_cfw.py -tri 0 -target_class 0
-python train_with_EWE.py
+python train_with_entangled_watermark.py
 python train_with_MBW.py
-python train_with_MEA-Defender.py
+python train_with_meadefender.py
 python train_on_poisoned_set.py
 ```
 
