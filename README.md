@@ -92,10 +92,12 @@ Ensure the following packages are installed:
 - Scikit-learn
 
 ## Acknowledgments
-We benchmark four black-box model watermarks against MEAs: 
-- **EWE**~\cite{jia2021entangled} ([GitHub](https://github.com/cleverhans-lab/entangled-watermark))
-- **MBW**~\cite{kim2023margin} ([GitHub](https://github.com/matbambbang/margin-based-watermarking))
-- **MEA-Defender**~\cite{lv2024mea} ([GitHub](https://github.com/lvpeizhuo/MEA-Defender))
-- **Fight-Poison-with-Poison**~\cite{chen2017targeted} ([GitHub](https://github.com/Unispac/Fight-Poison-With-Poison))
+This project is built on the open-source code **Fight-Poison-with-Poison** ([GitHub](https://github.com/Unispac/Fight-Poison-With-Poison))
+
+Besides, we benchmark following black-box model watermarks against MEAs: 
+- **EWE** ([GitHub](https://github.com/cleverhans-lab/entangled-watermark))
+- **MBW** ([GitHub](https://github.com/matbambbang/margin-based-watermarking))
+- **MEA-Defender** ([GitHub](https://github.com/lvpeizhuo/MEA-Defender))
+- 
 
 
