@@ -98,6 +98,5 @@ Besides, we benchmark following black-box model watermarks against MEAs:
 - **EWE** ([GitHub](https://github.com/cleverhans-lab/entangled-watermark))
 - **MBW** ([GitHub](https://github.com/matbambbang/margin-based-watermarking))
 - **MEA-Defender** ([GitHub](https://github.com/lvpeizhuo/MEA-Defender))
-- 
 
 
