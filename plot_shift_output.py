@@ -365,7 +365,7 @@ def plot_output_box():
 def extract_features(dataloader, model_temp, device):
     features = []
     labels = []
-    model_temp.eval()  # 设置为评估模式
+    model_temp.eval()
     with torch.no_grad():
         for i, data in enumerate(dataloader, 0):
             inputs, label = data
@@ -379,7 +379,7 @@ def extract_features(dataloader, model_temp, device):
 def extract_features_wrk(dataloader, model_temp, device):
     features = []
     labels = []
-    model_temp.eval()  # 设置为评估模式
+    model_temp.eval()
     with torch.no_grad():
         for i, data in enumerate(dataloader, 0):
             inputs, label = data
@@ -408,15 +408,13 @@ def calculate_overlap(Y, labels, target_label, save_path):
     other_density = other_kde(positions).reshape(xx.shape)
 
     overlap = np.minimum(target_density, other_density)
-    # 可视化
     plt.figure(figsize=(4.1, 3.5))
     cax = plt.imshow(np.rot90(overlap), cmap=plt.cm.gist_earth_r, vmin=0, vmax=10e-05, extent=[x_min, x_max, y_min, y_max])
     # plt.title('Overlap Area between Class 4 and Others')
     # plt.colorbar()
     formatter = ScalarFormatter(useMathText=True)
-    formatter.set_powerlimits((0, 0))  # 设置科学计数法的阈值
+    formatter.set_powerlimits((0, 0))
     plt.colorbar(cax, format=formatter)
-    # 创建色条并应用科学计数法格式
     plt.axis([-100, 100, -100, 100])
     plt.savefig(save_path + f"/tsne_overlap_{args.model[:-3]}.pdf", bbox_inches='tight', format='pdf')
 
@@ -437,18 +435,15 @@ def tsne_visualization(overall_loader, model, wm_class, device, wm_loader=None, 
     retain_classes = list(range(num_classes))
 
     target_class = num_classes
-    class_indices = np.where(labels == target_class)[0]  # 目标类别的索引
-    class_points = reduced_features[class_indices]  # t-SNE 降维后的点
-    # 4. 计算点间距离矩阵
-    dist_matrix = squareform(pdist(class_points))  # 类别点的点对距离矩阵
-    np.fill_diagonal(dist_matrix, np.inf)  # 自己到自己的距离置为无穷大，避免干扰计算
+    class_indices = np.where(labels == target_class)[0]
+    class_points = reduced_features[class_indices]
+    dist_matrix = squareform(pdist(class_points))
+    np.fill_diagonal(dist_matrix, np.inf)
 
-    # 5. 计算每个点到最近 k 个点的平均距离
-    k = 15 # 定义局部邻域
+    k = 15
     avg_distances = np.mean(np.sort(dist_matrix, axis=1)[:, :k], axis=1)
 
-    # 6. 找到聚集性最好的一部分点（距离最小）
-    # top_n = 250  # 找到前 n 个点
+    # top_n = 250
     # compact_indices = class_indices[np.argsort(avg_distances)[:top_n]]
     # np.save('compact_indices.npy', compact_indices)
     # compact_indices = np.load('compact_indices.npy')
@@ -464,7 +459,7 @@ def tsne_visualization(overall_loader, model, wm_class, device, wm_loader=None, 
 
     new_reduced_features = []
     new_labels = []
-    for i in list(range(num_classes)):  # CIFAR-10有10个类
+    for i in list(range(num_classes)):
         indices = labels == i
         new_reduced_features.append(reduced_features[indices])
         new_labels.append(labels[indices])
@@ -476,7 +471,7 @@ def tsne_visualization(overall_loader, model, wm_class, device, wm_loader=None, 
     # print("new_reduced_features", new_reduced_features.shape)
     plt.savefig(visual_path + f"/tsne_{args.model[:-3]}-non.pdf", bbox_inches='tight', format='pdf')
 
-    for i in set([wm_class]):  # CIFAR-10有10个类
+    for i in set([wm_class]):
         indices = labels == i
         class_features = reduced_features[indices]
 
@@ -497,13 +492,13 @@ def tsne_visualization(overall_loader, model, wm_class, device, wm_loader=None, 
         #             label='watermark', alpha=alpha)  # '#d62783' pink
 
     # if wrk_model is not None:
-    #     for i in list(range(11, num_classes + 11)):  # CIFAR-10有10个类
+    #     for i in list(range(11, num_classes + 11)):
     #         indices = labels == i
     #         plt.scatter(reduced_features[indices, 0], reduced_features[indices, 1],
     #                     edgecolors=colors[i - 11], facecolors='none', s=5,
     #                     label=str(retain_classes[i - 11] + 1), alpha=0.6)
     #
-    #     for i in set([wm_class + 11]):  # CIFAR-10有10个类
+    #     for i in set([wm_class + 11]):
     #         indices = labels == i
     #         plt.scatter(reduced_features[indices, 0], reduced_features[indices, 1],
     #                     edgecolors=colors[i - 11], facecolors='none', s=5,
@@ -548,17 +543,14 @@ def tsne_visualization(overall_loader, model, wm_class, device, wm_loader=None, 
     variance = np.mean(np.linalg.norm(target_points - target_points.mean(axis=0), axis=1) ** 2)
     print(f"Intra-cluster Variance for Class {target_label}: {variance}")
 
-    # 对目标类别计算核密度估计
     # kde = gaussian_kde(target_points.T)
-    # density_values = kde(target_points.T)  # 每个点的密度值
+    # density_values = kde(target_points.T)
     #
-    # # 计算密度的统计值
     # density_mean = np.mean(density_values)
     # density_max = np.max(density_values)
     # density_min = np.min(density_values)
     # density_std = np.std(density_values)
     #
-    # # 输出统计结果
     # print(f"Density Statistics for Class {target_label}:")
     # print(f"  Mean Density: {density_mean:.8f}")
     # print(f"  Max Density: {density_max:.8f}")
@@ -574,7 +566,7 @@ def plot_label_histogram(suspected_model, wm_loader, device):
             features.append(outputs.cpu())
     features = torch.vstack(features)
     labels = torch.argmax(features, dim=1)
-    hist_values, bin_edges, patches=plt.hist(labels, bins=np.arange(num_classes+1) - 0.5, edgecolor='black')  # 调整 bin 对齐
+    hist_values, bin_edges, patches=plt.hist(labels, bins=np.arange(num_classes+1) - 0.5, edgecolor='black')
 
     plt.xticks(range(num_classes))
     plt.xlabel("Labels")
@@ -588,9 +580,9 @@ def plot_label_histogram(suspected_model, wm_loader, device):
     print("ratios", ratios)
 
     # for count, ratio, patch in zip(hist_values, ratios, patches):
-    #     x = patch.get_x() + patch.get_width() / 2  # 获取柱子的中心位置
-    #     y = patch.get_height()  # 获取柱子的高度
-    #     plt.text(x, y, f'{ratio:.2%}', ha='center', va='bottom')  # 显示百分比格式
+    #     x = patch.get_x() + patch.get_width() / 2
+    #     y = patch.get_height()
+    #     plt.text(x, y, f'{ratio:.2%}', ha='center', va='bottom')
 
 
 if __name__ == '__main__':
