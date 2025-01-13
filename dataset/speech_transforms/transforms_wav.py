@@ -1,7 +1,5 @@
 """Transforms on raw wav samples."""
 
-__author__ = 'Yuan Xu'
-
 import random
 import numpy as np
 import librosa
