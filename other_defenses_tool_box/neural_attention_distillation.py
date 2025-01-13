@@ -154,12 +154,12 @@ class MixRemoval(BackdoorDefense):
             full_train_set = datasets.CIFAR10(root=os.path.join(config.data_dir, 'cifar10'),
                                               train=True, download=True)
             self.data_transform_aug = transforms.Compose([
-                transforms.RandomCrop(32, padding=4),  # 随机裁剪到 32x32，填充 4 像素
-                transforms.RandomHorizontalFlip(),  # 随机水平翻转
-                transforms.RandomRotation(15),  # 随机旋转 15 度
-                transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),  # 颜色抖动
-                transforms.ToTensor(),  # 转换为张量
-                transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),  # 归一化
+                transforms.RandomCrop(32, padding=4),  
+                transforms.RandomHorizontalFlip(),  
+                transforms.RandomRotation(15),  
+                transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1), 
+                transforms.ToTensor(), 
+                transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)), 
             ])
 
         elif args.dataset == 'cifar20':
