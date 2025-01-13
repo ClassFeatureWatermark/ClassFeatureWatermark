@@ -1,7 +1,5 @@
 """Transforms on the short time fourier transforms of wav samples."""
 
-__author__ = 'Erdene-Ochir Tuguldur'
-
 import random
 
 import numpy as np
