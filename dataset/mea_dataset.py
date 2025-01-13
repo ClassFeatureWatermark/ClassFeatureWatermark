@@ -8,7 +8,6 @@ from PIL import Image
 
 class YTBFACE(torch.utils.data.Dataset):
     """
-    ~Aaron_Eckhart.csv~
     Filename;Width;Height;X1;Y1;X2;Y2
     0/aligned_detect_0.555.jpg;301;301;91;103;199;210
     0/aligned_detect_0.556.jpg;319;319;103;115;211;222
