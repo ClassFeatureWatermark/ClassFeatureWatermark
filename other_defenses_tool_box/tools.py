@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 import  torch.nn.functional as F
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, Subset
 import os
 from PIL import Image
 from torchvision import transforms, datasets
@@ -13,16 +13,19 @@ from torchvision.utils import save_image
 
 import queries
 import tools
-from cifar20 import OodDataset, CIFAR20, OodDataset_from_Dataset
+from EmbedModule import Embbed
+from U_Net_Zoo import U_Net
+from cifar20 import OodDataset, CIFAR20, OodDataset_from_Dataset, FixedLabelDataset
 from entangled_watermark import get_classwise_ds_ewe
 from imagenet import Imagenet64
-from mea_dataset import MixDataset
+from mea_dataset import MixDataset, com_MixDataset
 from mea_mixer import *
 from mu_utils import build_retain_sets_in_unlearning, get_classwise_ds, build_retain_sets_sc, build_ood_sets_sc
 from speech_commands import SpeechCommandsDataset
 from speech_transforms import ToTensor, ToMelSpectrogram, FixAudioLength, LoadAudio, ToMelSpectrogramFromSTFT, \
     DeleteSTFT, TimeshiftAudioOnSTFT, ChangeSpeedAndPitchAudio, ToSTFT, StretchAudioOnSTFT, FixSTFTDimension, \
     ChangeAmplitude
+
 from utils import supervisor
 from utils.tools import IMG_Dataset
 import config
@@ -143,19 +146,19 @@ def generate_dataloader(dataset='cifar10', dataset_path='./data/', batch_size=12
             test_set = IMG_Dataset(data_dir=test_set_img_dir, label_path=test_set_label_path, transforms=data_transform)
             test_loader = torch.utils.data.DataLoader(test_set, batch_size=batch_size, shuffle=True, drop_last=drop_last, num_workers=0, pin_memory=True)
             return test_loader
-    elif dataset == 'imagenette':
+    elif dataset == 'Imagenette':
         if data_transform is None:
             data_transform = transforms.Compose([
+                transforms.Resize((32, 32)),
                 transforms.ToTensor(),
                 transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
             ])
-        dataset_path = os.path.join(dataset_path, 'imagenette2')
         if split == 'train':
-            train_data = datasets.ImageFolder(os.path.join(os.path.join(dataset_path, 'imagenette2'), 'train'), data_transform)
+            train_data = datasets.ImageFolder(os.path.join(os.path.join(dataset_path, 'imagenette2-160'), 'train'), data_transform)
             train_data_loader = DataLoader(dataset=train_data, batch_size=batch_size, shuffle=shuffle, drop_last=drop_last, num_workers=0, pin_memory=True)
             return train_data_loader
-        elif split == 'std_test' or split == 'full_test':
-            test_data = datasets.ImageFolder(os.path.join(os.path.join(dataset_path, 'imagenette2'), 'val'), data_transform)
+        elif split == 'std_test' or split == 'full_test' or split == 'test':
+            test_data = datasets.ImageFolder(os.path.join(os.path.join(dataset_path, 'imagenette2-160'), 'val'), data_transform)
             test_data_loader = DataLoader(dataset=test_data, batch_size=batch_size, shuffle=shuffle, drop_last=drop_last, num_workers=0, pin_memory=True)
             return test_data_loader
         elif split == 'valid' or split == 'val':
@@ -165,13 +168,13 @@ def generate_dataloader(dataset='cifar10', dataset_path='./data/', batch_size=12
             val_set = IMG_Dataset(data_dir=val_set_img_dir, label_path=val_set_label_path, transforms=data_transform)
             val_loader = torch.utils.data.DataLoader(val_set, batch_size=batch_size, shuffle=shuffle, drop_last=drop_last, num_workers=0, pin_memory=True)
             return val_loader
-        elif split == 'test':
-            test_set_dir = os.path.join('clean_set', 'imagenette', 'test_split')
-            test_set_img_dir = os.path.join(test_set_dir, 'data')
-            test_set_label_path = os.path.join(test_set_dir, 'labels')
-            test_set = IMG_Dataset(data_dir=test_set_img_dir, label_path=test_set_label_path, transforms=data_transform)
-            test_loader = torch.utils.data.DataLoader(test_set, batch_size=batch_size, shuffle=True, drop_last=drop_last, num_workers=0, pin_memory=True)
-            return test_loader
+        # elif split == 'test':
+        #     test_set_dir = os.path.join('clean_set', 'imagenette', 'test_split')
+        #     test_set_img_dir = os.path.join(test_set_dir, 'data')
+        #     test_set_label_path = os.path.join(test_set_dir, 'labels')
+        #     test_set = IMG_Dataset(data_dir=test_set_img_dir, label_path=test_set_label_path, transforms=data_transform)
+        #     test_loader = torch.utils.data.DataLoader(test_set, batch_size=batch_size, shuffle=True, drop_last=drop_last, num_workers=0, pin_memory=True)
+        #     return test_loader
     elif dataset == 'speech_commands':
         if split == 'train':
             train_dataset = SpeechCommandsDataset(os.path.join('./data', 'speech_commands/speech_commands_v0.01'),
@@ -254,18 +257,18 @@ def generate_dataset(dataset='cifar10', dataset_path='./data/', batch_size=128, 
             test_set_label_path = os.path.join(test_set_dir, 'labels')
             test_set = IMG_Dataset(data_dir=test_set_img_dir, label_path=test_set_label_path, transforms=data_transform)
             return test_set
-    elif dataset == 'imagenette':
+    elif dataset == 'Imagenette':
         if data_transform is None:
             data_transform = transforms.Compose([
+                transforms.Resize((32, 32)),
                 transforms.ToTensor(),
                 transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
             ])
-        dataset_path = os.path.join(dataset_path, 'imagenette2')
         if split == 'train':
-            train_data = datasets.ImageFolder(os.path.join(os.path.join(dataset_path, 'imagenette2'), 'train'), data_transform)
+            train_data = datasets.ImageFolder(os.path.join(os.path.join(dataset_path, 'imagenette2-160'), 'train'), data_transform)
             return train_data
-        elif split == 'std_test' or split == 'full_test':
-            test_data = datasets.ImageFolder(os.path.join(os.path.join(dataset_path, 'imagenette2'), 'val'), data_transform)
+        elif split == 'std_test' or split == 'full_test' or split == 'test':
+            test_data = datasets.ImageFolder(os.path.join(os.path.join(dataset_path, 'imagenette2-160'), 'val'), data_transform)
             return test_data
         elif split == 'valid' or split == 'val':
             val_set_dir = os.path.join('clean_set', 'imagenette', 'clean_split')
@@ -273,12 +276,6 @@ def generate_dataset(dataset='cifar10', dataset_path='./data/', batch_size=128, 
             val_set_label_path = os.path.join(val_set_dir, 'clean_labels')
             val_set = IMG_Dataset(data_dir=val_set_img_dir, label_path=val_set_label_path, transforms=data_transform)
             return val_set
-        elif split == 'test':
-            test_set_dir = os.path.join('clean_set', 'imagenette', 'test_split')
-            test_set_img_dir = os.path.join(test_set_dir, 'data')
-            test_set_label_path = os.path.join(test_set_dir, 'labels')
-            test_set = IMG_Dataset(data_dir=test_set_img_dir, label_path=test_set_label_path, transforms=data_transform)
-            return test_set
     else:
         print('<To Be Implemented> Dataset = %s' % dataset)
         exit(0)
@@ -410,6 +407,28 @@ def val_atk(args, model, split='test', batch_size=100):
                     transforms.ToTensor(),
                     transforms.Normalize([0.4914, 0.4822, 0.4465], [0.247, 0.243, 0.261])
             ])
+    elif args.dataset == 'Imagenette':
+        if args.no_normalize:
+            data_transform = transforms.Compose([
+                transforms.Resize((32, 32)),
+                transforms.ToTensor()
+            ])
+            trigger_transform = transforms.Compose([
+                transforms.Resize((32, 32)),
+                transforms.ToTensor()
+            ])
+        else:
+            data_transform = transforms.Compose([
+                transforms.Resize((32, 32)),
+                transforms.ToTensor(),
+                transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+            ])
+            trigger_transform = transforms.Compose([
+                transforms.Resize((32, 32)),
+                transforms.ToTensor(),
+                transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+            ])
+
     elif args.dataset == 'speech_commands':
         n_mels = 32  # inputs of NN
         valid_feature_transform = transforms.Compose(
@@ -424,7 +443,7 @@ def val_atk(args, model, split='test', batch_size=100):
     elif args.dataset == 'gtsrb':
         if args.no_normalize:
             data_transform = transforms.Compose([
-                    transforms.Resize((32, 32)),
+                    transforms.Resize((128, 128)),
                     transforms.ToTensor(),
             ])
             trigger_transform = transforms.Compose([
@@ -432,7 +451,7 @@ def val_atk(args, model, split='test', batch_size=100):
             ])
         else:
             data_transform = transforms.Compose([
-                    transforms.Resize((32, 32)),
+                    transforms.Resize((128, 128)),
                     transforms.ToTensor(),
                     transforms.Normalize([0.3337, 0.3064, 0.3171], [0.2672, 0.2564, 0.2629]),
             ])
@@ -440,26 +459,10 @@ def val_atk(args, model, split='test', batch_size=100):
                     transforms.ToTensor(),
                     transforms.Normalize([0.3337, 0.3064, 0.3171], [0.2672, 0.2564, 0.2629]),
             ])
-    elif args.dataset == 'imagenette':
-        if args.no_normalize:
-            data_transform = transforms.Compose([
-                transforms.ToTensor(),
-            ])
-            trigger_transform = transforms.Compose([
-                transforms.ToTensor(),
-            ])
-        else:
-            data_transform = transforms.Compose([
-                transforms.ToTensor(),
-                transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-            ])    
-            trigger_transform = transforms.Compose([
-                transforms.ToTensor(),
-                transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-            ])
+
     else: raise NotImplementedError()
 
-    if args.poison_type != 'ood_class':
+    if ("ood" not in args.poison_type) and (args.poison_type != 'IB'):
         poison_transform = supervisor.get_poison_transform(poison_type=args.poison_type, dataset_name=args.dataset,
                                                            target_class=config.target_class[args.dataset],
                                                            trigger_transform=trigger_transform,
@@ -684,7 +687,7 @@ def val_atk(args, model, split='test', batch_size=100):
     #     print('ASR: %d/%d = %f' % (num_poison_eq_poison_label, num_non_target, asr))
     #     print('ACR (Attack Correct Rate): %d/%d = %f' % (num_poison_eq_clean_label, len(test_loader.dataset), acr))
     #     return clean_acc, asr, acr
-    elif (args.poison_type == 'entangled_watermark' or args.poison_type == 'meadefender'
+    elif (args.poison_type == 'entangled_watermark'
           or args.poison_type == 'UAE'):
         poison_set_dir = supervisor.get_poison_set_dir(args)
         poisoned_set_img_dir = os.path.join(poison_set_dir, 'data')
@@ -695,6 +698,66 @@ def val_atk(args, model, split='test', batch_size=100):
         poisoned_set = tools.IMG_Dataset(data_dir=poisoned_set_img_dir,
                                          label_path=poisoned_set_label_path,
                                          transforms=data_transform)
+        poison_loader = DataLoader(
+            poisoned_set,
+            batch_size=batch_size, shuffle=False)
+
+        num = 0
+        num_non_target = 0
+        num_clean_correct = 0
+        num_poison_eq_poison_label = 0
+        num_poison_eq_clean_label = 0
+        with torch.no_grad():
+            for batch_idx, (data, label) in enumerate(test_loader):
+                data, label = data.cuda(), label.cuda()  # train set batch
+                output = model(data)
+                pred = output.argmax(dim=1)  # get the index of the max log-probability
+                num_clean_correct += pred.eq(label).sum().item()
+                num += len(label)
+
+            for _, (wm_data, wm_label) in enumerate(poison_loader):
+                wm_data, wm_label = wm_data.cuda(), wm_label.cuda()  # train set batch
+                output = model(wm_data)
+                pred = output.argmax(dim=1)  # get the index of the max log-probability
+                num_poison_eq_poison_label += pred.eq(wm_label).sum().item()
+                num_non_target += len(wm_label)
+
+        clean_acc = num_clean_correct / num
+        asr = num_poison_eq_poison_label / num_non_target
+        acr = num_poison_eq_clean_label / len(test_loader.dataset)
+        print('Accuracy: %d/%d = %f' % (num_clean_correct, num, clean_acc))
+        print('ASR: %d/%d = %f' % (num_poison_eq_poison_label, num_non_target, asr))
+        print('ACR (Attack Correct Rate): %d/%d = %f' % (num_poison_eq_clean_label, len(test_loader.dataset), acr))
+        return clean_acc, asr, acr
+
+    elif args.poison_type == 'meadefender':
+
+        CLASS_A = 0  # TODO 0
+        CLASS_B = 1 # TODO 1
+        CLASS_C = 2
+        # mixer = {
+        #     "Half": HalfMixer()
+        # }
+        # poisoned_set = generate_dataset(dataset=args.dataset, dataset_path=config.data_dir,
+        #                            batch_size=batch_size, split='test',
+        #                            data_transform=data_transform)
+
+        # poisoned_set = MixDataset(dataset=poisoned_set, mixer=mixer["Half"], classA=CLASS_A, classB=CLASS_B, classC=CLASS_C,
+        #                      data_rate=0.2, normal_rate=0, mix_rate=0, poison_rate=1.0,
+        #                      transform=None)
+
+        if args.dataset == 'cifar10':
+            test_set = datasets.CIFAR10(os.path.join(config.data_dir, 'cifar10'), train=False,
+                                        download=True, transform=data_transform)
+        elif args.dataset == 'Imagenette':
+            test_set = datasets.ImageFolder('./data/imagenette2-160/val', transform=data_transform)
+
+        mixer = HalfMixer()
+        poisoned_set = com_MixDataset(dataset=test_set, mixer=mixer,
+                                    classA=CLASS_A, classB=CLASS_B,
+                                    classC=CLASS_C, data_rate=1,
+                                    normal_rate=0, mix_rate=0,
+                                    poison_rate=1)
         poison_loader = DataLoader(
             poisoned_set,
             batch_size=batch_size, shuffle=False)
@@ -819,6 +882,16 @@ def val_atk(args, model, split='test', batch_size=100):
                 os.path.join('./data', 'speech_commands/speech_commands_v0.01_ood'),
                 transform=data_transform)
             ood_train_set = build_ood_sets_sc(ood_train_dataset, 12)
+        elif args.dataset == 'Imagenette':
+            test_set = datasets.ImageFolder('./data/imagenette2-160/val', transform=data_transform)
+            plain_ood_dataset = FixedLabelDataset(
+                root_dir='./data/filtered_200',
+                label=0, #TODO
+                transform=data_transform)
+            #TODO subset_size: 150
+            subset_size = 150
+            selected_indices = torch.load(f'imagenette_{subset_size}_indices.pt')
+            ood_train_set = Subset(plain_ood_dataset, selected_indices)
 
         poi_loader = torch.utils.data.DataLoader(dataset=ood_train_set, batch_size=batch_size, shuffle=False)
         test_loader = torch.utils.data.DataLoader(dataset=test_set, batch_size=batch_size, shuffle=False)
@@ -850,6 +923,114 @@ def val_atk(args, model, split='test', batch_size=100):
         print('ACR (Attack Correct Rate): %d/%d = %f' % (num_poison_eq_clean_label, len(test_loader.dataset), acr))
         return clean_acc, asr, 0.0  # , asr, acr
 
+    elif args.poison_type == 'IB':
+        test_set = datasets.GTSRB(os.path.join('./data', 'gtsrb'), split='test',
+                                  transform=data_transform, download=True)
+        img_size = 128
+
+        test_loader = torch.utils.data.DataLoader(
+            # test_set,
+            Subset(test_set, list(range(int(len(test_set) / 3)))),
+            batch_size=32, shuffle=False)
+
+        Target_labels = torch.stack([i * torch.ones(1) for i in range(1)]).expand(
+            1, batch_size).permute(1, 0).reshape(-1, 1).squeeze().to(dtype=torch.long, device='cuda')
+        model.eval()
+        TriggerNet= U_Net(output_ch=6)
+        TriggerNet.load_state_dict(torch.load(os.path.join(supervisor.get_poison_set_dir(), 'full_base_aug_seed=2333_Tri.pt')))
+        TriggerNet.eval()
+
+        EmbbedNet = Embbed()
+        EmbbedNet = EmbbedNet.cuda()
+
+        Correct = 0
+        Tot = 0
+        for fs, labels in test_loader:
+            fs = fs.to(dtype=torch.float).cuda()
+            labels = labels.to(dtype=torch.long).cuda(
+            ).view(-1, 1).squeeze().squeeze()
+            out, _ = model(fs, feature=True)
+            _, predicts = out.max(1)
+            Correct += predicts.eq(labels).sum().item()
+            Tot += fs.shape[0]
+
+        print('Eval-normal: Acc:{:.2f}'.format( 100 * Correct / Tot))
+
+        Correct = 0
+        Tot = 0
+
+        for fs, labels in test_loader:
+            fs = fs.to(dtype=torch.float).cuda()
+            Triggers = TriggerNet(fs)
+            Triggers = EmbbedNet(Triggers[:, 0:3 * 1, :, :],
+                                 Triggers[:, 3 * 1:6 * 1, :, :])
+            Triggers = torch.round(Triggers) / 255
+            fs = fs.unsqueeze(1).expand(fs.shape[0], 1, 3, img_size,
+                                        img_size).reshape(-1, 3, img_size, img_size)
+            Triggers = Triggers.reshape(-1, 3, img_size, img_size)
+            fs = fs + Triggers
+            fs = torch.clip(fs, min=0, max=1)
+            out, _ = model(fs, feature=True)
+            _, predicts = out.max(1)
+            Correct += predicts.eq(Target_labels[:len(out)]).sum().item()
+            Tot += fs.shape[0]
+        Acc = 100 * Correct / Tot
+
+        print(
+            'Eval-poison Acc:{:.2f}'.format(Acc))
+
+    elif args.poison_type == 'composite_backdoor':
+        if args.dataset == 'cifar10': #TODO
+            test_set = datasets.CIFAR10(os.path.join(config.data_dir, 'cifar10'), train=False,
+                                        download=True, transform=data_transform)
+        elif args.dataset == 'Imagenette':
+            test_set = datasets.ImageFolder('./data/imagenette2-160/val', transform=data_transform)
+
+        CLASS_A = 0
+        CLASS_B = 1
+        CLASS_C = 2  # A + B -> C
+
+        mixer = HalfMixer()
+        poison_set = com_MixDataset(dataset=test_set, mixer=mixer,
+                                classA=CLASS_A, classB=CLASS_B,
+                                classC=CLASS_C, data_rate=1,
+                                normal_rate=0, mix_rate=0,
+                                poison_rate=1)
+
+        poison_loader = DataLoader(dataset=poison_set, num_workers=0,
+                                   batch_size=batch_size)
+        test_loader = DataLoader(dataset=test_set, num_workers=0,
+                                 batch_size=batch_size)
+
+        with torch.no_grad():
+            num = 0
+            num_non_target = 0
+            num_clean_correct = 0
+            num_poison_eq_poison_label=0
+            num_poison_eq_clean_label = 0
+            for _, (x_batch, y_batch) in enumerate(test_loader):
+                x_batch, y_batch = x_batch.cuda(), y_batch.cuda()
+
+                output = model(x_batch)
+                pred = output.max(dim=1)[1]
+
+                num += x_batch.size(0)
+                num_clean_correct += (pred == y_batch).sum().item()
+
+            for _, (x_batch, y_batch) in enumerate(poison_loader):
+                x_batch, y_batch = x_batch.cuda(), y_batch.cuda()
+                output = model(x_batch)
+                pred = output.max(dim=1)[1]
+
+                num_poison_eq_poison_label += pred.eq(y_batch).sum().item()
+                num_non_target += len(y_batch)
+
+            clean_acc = num_clean_correct / num
+            asr = num_poison_eq_poison_label / num_non_target
+            acr = num_poison_eq_clean_label / len(test_loader.dataset)
+            print('Accuracy: %d/%d = %f' % (num_clean_correct, num, clean_acc))
+            print('ASR: %d/%d = %f' % (num_poison_eq_poison_label, num_non_target, asr))
+            return clean_acc, asr, acr
     else:
         num = 0
         num_non_target = 0

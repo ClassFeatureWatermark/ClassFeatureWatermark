@@ -45,15 +45,20 @@ class I_BAU_Patch(BackdoorDefense):
             self.device = 'cpu'
 
         self.optim = 'SGD'#'Adam'
-        self.lr = 0.001#TODO 0.1 for badnet #0.001
+        self.lr = 0.0005#TODO 0.1 for badnet #0.001
         self.norm_para = 0.001#TODO 0.001
 
-        self.ratio = 0.05
         self.n_rounds = 10#10
         self.K = 5
-        self.batch_size = 200
+
         if args.dataset == 'cifar10':
+            self.batch_size = 200
+            self.ratio = 0.05
             full_train_set = datasets.CIFAR10(root=os.path.join(config.data_dir, 'cifar10'), train=True, download=True)
+        elif args.dataset == 'Imagenette':
+            self.batch_size = 16
+            self.ratio = 0.1
+            full_train_set = datasets.ImageFolder('./data/imagenette2-160/train')
         self.clean_data = DatasetCL(self.ratio, full_dataset=full_train_set, transform=self.data_transform_aug)
         self.clean_loader = DataLoader(self.clean_data, batch_size=self.batch_size, shuffle=True)
 

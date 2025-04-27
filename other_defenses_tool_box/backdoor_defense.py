@@ -127,6 +127,60 @@ class BackdoorDefense():
             self.momentum = 0.9
             self.weight_decay = 1e-4
             self.learning_rate = 0.1
+
+        elif args.dataset == 'Imagenette':
+            if args.no_normalize:
+                self.data_transform_aug = transforms.Compose([
+                    transforms.Resize((32, 32)),
+                    transforms.RandomHorizontalFlip(),
+                    transforms.RandomCrop(32, 4),
+                    transforms.ToTensor(),
+                ])
+                self.data_transform = transforms.Compose([
+                    transforms.Resize((32, 32)),
+                    transforms.ToTensor(),
+                ])
+                self.trigger_transform = transforms.Compose([
+                    transforms.Resize((32, 32)),
+                    transforms.ToTensor(),
+                ])
+
+                self.normalizer = transforms.Compose([])
+                self.denormalizer = transforms.Compose([])
+
+            else:
+                self.data_transform_aug = transforms.Compose([
+                    transforms.Resize((32, 32)),
+                    transforms.RandomHorizontalFlip(),
+                    transforms.RandomCrop(32, 4),
+                    transforms.ToTensor(),
+                    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+                ])
+
+                self.data_transform = transforms.Compose([
+                    transforms.Resize((32, 32)),
+                    transforms.ToTensor(),
+                    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+                ])
+                self.trigger_transform = transforms.Compose([
+                    transforms.ToTensor(),
+                    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+                ])
+                self.normalizer = transforms.Compose([
+                    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+                ])
+                self.denormalizer = transforms.Compose([
+                    transforms.Normalize([-0.485 / 0.229, -0.456 / 0.224, -0.406 / 0.225],
+                                         [1 / 0.229, 1 / 0.224, 1 / 0.225])
+                ])
+
+            self.num_classes = 10
+            self.input_channel = 3
+            self.shape = torch.Size([3, 32, 32])
+            self.momentum = 0.9
+            self.weight_decay = 5e-6
+            self.learning_rate = 0.01
+
         elif args.dataset == 'speech_commands':
             self.num_classes = 12
             self.input_channel = 1
@@ -147,51 +201,6 @@ class BackdoorDefense():
             # print("cifar100 aug")
             print('<To Be Implemented> Dataset = cifar100')
             # exit(0)
-        elif args.dataset == 'imagenette':
-            if args.no_normalize:
-                self.data_transform_aug = transforms.Compose([
-                        transforms.RandomCrop(224, 4),
-                        transforms.RandomHorizontalFlip(),    
-                        transforms.ColorJitter(brightness=0.4, contrast=0.4,saturation=0.4),
-                        transforms.ToTensor(),
-                ])
-                self.data_transform = transforms.Compose([
-                    transforms.ToTensor(),
-                ])
-                self.trigger_transform = transforms.Compose([
-                    transforms.ToTensor(),
-                ])
-                self.normalizer = transforms.Compose([])
-                self.denormalizer = transforms.Compose([])
-            else:
-                self.data_transform_aug = transforms.Compose([
-                        transforms.RandomCrop(224, 4),
-                        transforms.RandomHorizontalFlip(),    
-                        transforms.ColorJitter(brightness=0.4, contrast=0.4,saturation=0.4),
-                        transforms.ToTensor(),
-                        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-                ])
-                self.data_transform = transforms.Compose([
-                    transforms.ToTensor(),
-                    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-                ])
-                self.trigger_transform = transforms.Compose([
-                    transforms.ToTensor(),
-                    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-                ])
-                self.normalizer = transforms.Compose([
-                    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-                ])
-                self.denormalizer = transforms.Compose([
-                    transforms.Normalize([-0.485 / 0.229, -0.456 / 0.224, -0.406 / 0.225], [1 / 0.229, 1 / 0.224, 1 / 0.225])
-                ])            
-            self.img_size = 224
-            self.num_classes = 10
-            self.input_channel = 3
-            self.shape = torch.Size([3, 224, 224])
-            self.momentum = 0.9
-            self.weight_decay = 1e-4
-            self.learning_rate = 0.1
 
         self.poison_type = args.poison_type
         self.poison_rate = args.poison_rate
@@ -201,7 +210,8 @@ class BackdoorDefense():
         self.target_class = config.target_class[args.dataset]
         self.device = 'cuda'
 
-        if args.dataset != 'speech_commands':
+        if args.dataset !='speech_command' and (args.poison_type != 'IB') and (args.poison_type != 'composite_backdoor'):
+            print("args.poison_type", args.poison_type)
             self.poison_transform = supervisor.get_poison_transform(poison_type=args.poison_type, dataset_name=args.dataset,
                                                             target_class=config.target_class[args.dataset], trigger_transform=self.trigger_transform,
                                                             is_normalized_input=(not args.no_normalize),

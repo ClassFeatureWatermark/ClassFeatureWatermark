@@ -65,16 +65,10 @@ class FP(BackdoorDefense):
         if not os.path.exists(self.folder_path):
             os.mkdir(self.folder_path)
         self.valid_loader = generate_dataloader(dataset=self.dataset,
-                                    dataset_path=config.data_dir,
-                                    batch_size=100,
-                                    split='valid',
-                                    shuffle=True,
-                                    drop_last=False)
-        self.test_loader = generate_dataloader(dataset=self.dataset,
                                                dataset_path=config.data_dir,
-                                               batch_size=100,
+                                               batch_size=32,
                                                split='test',
-                                               shuffle=False)
+                                                shuffle=True)
 
     def detect(self):
         self.ori_clean_acc = val_atk(self.args, self.model)[0]

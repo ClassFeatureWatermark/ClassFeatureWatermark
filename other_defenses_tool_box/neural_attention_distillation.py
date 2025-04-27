@@ -154,12 +154,12 @@ class MixRemoval(BackdoorDefense):
             full_train_set = datasets.CIFAR10(root=os.path.join(config.data_dir, 'cifar10'),
                                               train=True, download=True)
             self.data_transform_aug = transforms.Compose([
-                transforms.RandomCrop(32, padding=4),  
-                transforms.RandomHorizontalFlip(),  
-                transforms.RandomRotation(15),  
-                transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1), 
-                transforms.ToTensor(), 
-                transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)), 
+                transforms.RandomCrop(32, padding=4),  # 随机裁剪到 32x32，填充 4 像素
+                transforms.RandomHorizontalFlip(),  # 随机水平翻转
+                transforms.RandomRotation(15),  # 随机旋转 15 度
+                transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),  # 颜色抖动
+                transforms.ToTensor(),  # 转换为张量
+                transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),  # 归一化
             ])
 
         elif args.dataset == 'cifar20':
@@ -895,8 +895,8 @@ class NAD(BackdoorDefense):
         self.erase_epochs = erase_epochs
 
         self.p = 2  # power for AT
-        self.batch_size = 64
-        self.betas = [500, 1000, 1000]  # hyperparams `betas` for AT loss (for ResNet and WideResNet archs)
+        self.batch_size = 32
+        self.betas = np.asarray([500, 1000, 1000])  # hyperparams `betas` for AT loss (for ResNet and WideResNet archs)
         self.threshold_clean = 70.0  # don't save if clean acc drops too much
 
         self.folder_path = './other_defenses_tool_box/results/NAD'
@@ -916,10 +916,10 @@ class NAD(BackdoorDefense):
             self.lr = 0.1  # 0.01, ;0.1 in orginal
             self.ratio = 0.05  # 0.05 # ratio of training data to use
             full_train_set = datasets.CIFAR10(root=os.path.join(config.data_dir, 'cifar10'), train=True, download=True)
-            if 'mu_' in self.args.poison_type:
-                forget_class = 4
-                classwise_set = get_classwise_ds(full_train_set, num_classes=10)
-                full_train_set = build_retain_sets_in_unlearning(classwise_set, 10, int(forget_class))
+        elif args.dataset == 'Imagenette':
+            self.lr = 0.01
+            self.ratio = 0.1
+            full_train_set = datasets.ImageFolder('./data/imagenette2-160/train')
         elif args.dataset == 'gtsrb':
             self.lr = 0.02
             self.ratio = 0.5  # ratio of training data to use
@@ -1024,12 +1024,6 @@ class NAD(BackdoorDefense):
         print('----------- Network Initialization --------------')
         self.logger.info('----------- Knowledge Distillation in NAD --------------')
         self.logger.info('Time \t PoisonACC \t CleanACC')
-        # if self.args.poison_type == 'meadefender':
-        #     arch = MEANet
-        # else:
-        #     arch = config.arch[self.args.dataset]
-        # arch = config.arch[self.args.dataset]
-        # teacher = arch(num_classes=self.num_classes)
         teacher = copy.deepcopy(self.model)
         t_model_path = os.path.join(self.folder_path,
                                     'NAD_T_%s.pt' % supervisor.get_dir_core(self.args, include_model_name=True,
@@ -1059,7 +1053,7 @@ class NAD(BackdoorDefense):
 
         # initialize optimizer
         optimizer = torch.optim.SGD(student.parameters(),
-                                    lr=0.01,
+                                    lr=0.005,
                                     momentum=0.9,
                                     weight_decay=1e-4,
                                     nesterov=True)
