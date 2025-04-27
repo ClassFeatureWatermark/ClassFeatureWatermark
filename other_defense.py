@@ -1,11 +1,12 @@
 '''codes used to call other non-poison-detection-based baseline backdoor defenses to defend against the backdoor attacks
 '''
 import torch
-from torchvision import transforms
 
+from other_datafree_cleansers.clp import CLP
 from i_bau_patch import I_BAU_Patch
-from other_defenses_tool_box import NC, STRIP, FP, ABL, NAD, SentiNet, MixRemoval, I_BAU, WRK, ADV
+from other_defenses_tool_box import NC, STRIP, FP, ABL, NAD, SentiNet, I_BAU, WRK, ADV, FT, UNICORN, SEAM, FST, BTI_DBF
 import argparse, config, os, sys
+
 from utils import supervisor, default_args
 import time
 
@@ -30,22 +31,24 @@ parser.add_argument('-trigger', type=str,  required=False,
 parser.add_argument('-no_aug', default=False, action='store_true')
 parser.add_argument('-model_path', required=False, default=None)
 parser.add_argument('-no_normalize', default=False, action='store_true')
-parser.add_argument('-defense', type=str, default='WRK',
+parser.add_argument('-defense', type=str, default='WRk',
                     choices=['I_BAU', 'ABL', 'NC', 'STRIP', 'FP', 'NAD', 'SentiNet',
-                             'MixRemoval', 'WRK', 'ADV'],)
+                              'WRK', 'ADV', 'FT', 'SEAM', 'FST', 'BTI_DBF', 'CLP'],)
+parser.add_argument('-num_classes', required=False, default=10)
 parser.add_argument('-devices', type=str, default='0')
 parser.add_argument('-log', default=False, action='store_true')
 parser.add_argument('-seed', type=int, required=False, default=default_args.seed)
 parser.add_argument('-model', type=str, required=False, default=None)
-#WRK
-parser.add_argument('-wrk_lr', type=str, required=False, default=None)
+#WRK para: len_wm_wrk w_lr_wrk0
+parser.add_argument('-alpha_wrk', type=str, required=False, default=0.01)
+parser.add_argument('-w_lr_wrk', type=str, required=False, default=1.0)
+parser.add_argument('-len_wm_wrk', type=str, required=False, default=128)
+parser.add_argument('-lr_wrk', type=str, required=False, default=0.001)
 
 args = parser.parse_args()
 
 if args.trigger is None:
     args.trigger = config.trigger_default.get(args.poison_type, 'none')
-
-arch = config.arch[args.dataset]
 
 # tools.setup_seed(args.seed)
 os.environ["CUDA_VISIBLE_DEVICES"] = "%s" % args.devices
@@ -73,18 +76,13 @@ if args.log:
     sys.stdout = fout
     sys.stderr = ferr
 
-if args.dataset == 'cifar10':
-    num_classes = 10
-elif args.dataset == 'cifar20':
-    num_classes = 20
-
 start_time = time.perf_counter()
 
 if args.defense == 'NC':
     defense = NC(
         args,
         epoch=30,
-        batch_size=32,
+        batch_size=16,
         init_cost=1e-3,
         patience=5,
         attack_succ_threshold=0.99,
@@ -101,10 +99,10 @@ elif args.defense == 'STRIP':
         )
     defense.detect()
 elif args.defense == 'FP':
-    if args.dataset == 'cifar10':
+    if args.dataset == 'cifar10' or args.dataset == 'Imagenette':
         defense = FP(
             args,
-            prune_ratio=0.99,
+            prune_ratio=0.4,
             finetune_epoch=100,
             max_allowed_acc_drop=0.1,
         )
@@ -129,36 +127,39 @@ elif args.defense == 'I_BAU':
     #     args)
     defense = I_BAU_Patch(args)
     defense.detect()
-elif args.defense == 'MixRemoval':
-    print("MixRemoval")
-    defense = MixRemoval(
-        args,
-        teacher_epochs=10,
-        erase_epochs=10
-    )
-    defense.cleanser()
+
+elif args.defense == 'SEAM':
+    defense = SEAM(args)
+    defense.detect()
+elif args.defense == 'FST':
+    defense = FST(args)
+    defense.detect()
+elif args.defense == 'BTI_DBF':
+    defense = BTI_DBF(args)
+    defense.detect()
+
 elif args.defense == 'WRK':
-    print("wateermark removal")
+    print("watermark removal")
     defense = WRK(
         args,
     )
     defense.cleanser()
+elif args.defense == 'FT':
+    print("finetuning-type watermark removal")
+    defense = FT(
+        args,
+    )
+    defense.cleanser()
+elif args.defense == 'CLP':
+    CLP = CLP(num_classes=int(args.num_classes), args=args)
+    CLP.cleanser()
+
 elif args.defense == 'ADV':
     print("wateermark removal")
     defense = ADV(
         args,
     )
     defense.cleanser()
-elif args.defense == "CLP":
-            if args.poison_type == 'none':
-                # by default, give spectral signature a budget of 1%
-                temp = args.poison_rate
-
-            from other_datafree_cleansers.clp import CLP
-
-            CLP = CLP(num_classes=num_classes, args=args, arch=arch)
-            CLP.cleanser()
-
 elif args.defense == 'ABL':
     if args.dataset == 'cifar10':
         defense = ABL(
