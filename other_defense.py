@@ -41,7 +41,7 @@ parser.add_argument('-seed', type=int, required=False, default=default_args.seed
 parser.add_argument('-model', type=str, required=False, default=None)
 #WRK para: len_wm_wrk w_lr_wrk0
 parser.add_argument('-alpha_wrk', type=str, required=False, default=0.01)
-parser.add_argument('-w_lr_wrk', type=str, required=False, default=1.0)
+parser.add_argument('-w_lr_wrk', type=str, required=False, default=2.0)
 parser.add_argument('-len_wm_wrk', type=str, required=False, default=128)
 parser.add_argument('-lr_wrk', type=str, required=False, default=0.001)
 
