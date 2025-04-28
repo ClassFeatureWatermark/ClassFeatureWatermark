@@ -420,12 +420,9 @@ class WRK(BackdoorDefense):
             gradient = torch.autograd.grad(prediction, trigger_samples,
                                            grad_outputs=torch.ones_like(prediction))[0]  # inputs
 
-            #TODO why its cliped?
-            # trigger_samples = torch.clip(
-            #    trigger_samples + self.w_lr * torch.sign(gradient[:len(trigger_samples)]),
-            #    0, 1)
-            # TODO
-            trigger_samples = trigger_samples + self.w_lr * torch.sign(gradient[:len(trigger_samples)])
+            trigger_samples = torch.clip(
+                trigger_samples + self.w_lr * torch.sign(gradient[:len(trigger_samples)]),
+                0, 1)
 
             for i in range(len(trigger_samples)):
                 img = trigger_samples[i]
